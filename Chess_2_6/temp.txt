@@ -1,0 +1,22 @@
+int FindShortestWayStepsCount(const Board& initialBoard)
+{
+    WaveBoard waveBoard = GetWaveBoardWithBlockedFields(initialBoard);
+    std::pair<std::vector<Position>, int> positionsAndStepsCount = GetClosestFiguresPositionsList(waveBoard);
+    std::vector<Position> closestFiguresPoses = positionsAndStepsCount.first;
+    int shortestWayStepsCount = positionsAndStepsCount.second;
+    int childStepsCount = INT_MAX;
+    for (Position source : closestFiguresPoses)
+    {
+        Board newBoard = GetUpdatedBoard(initialBoard, waveBoard.kingPos, source);
+        WaveBoard newWaveBoard = GetWaveBoardWithBlockedFields(newBoard);
+        std::pair<std::vector<Position>, int> newPosStepsPair = GetClosestFiguresPositionsList(newWaveBoard);
+        std::vector<Position> newClosestPoses = newPosStepsPair.first;
+        int shortest = newPosStepsPair.second;
+        childStepsCount = std::min(FindShortestWayStepsCount(newBoard), childStepsCount);
+    }
+    if (childStepsCount == INT_MAX)
+    {
+        childStepsCount = 0;
+    }
+    return shortestWayStepsCount + childStepsCount;
+}
