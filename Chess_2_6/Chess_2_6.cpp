@@ -6,6 +6,23 @@
 #include <stack>
 #include <unordered_set>
 
+// Шелеметев Михаил ПС-24
+// 2.6.Шахматы(12)
+// Шахматная доска состоит из N строк и M столбцов(1 ≤ N, M ≤ 15).Имеется единственный белый король.
+// У черных в распоряжении кони, слоны и ладьи.По заданному расположению фигур требуется взять белым королем все 
+// черные фигуры за минимальное число ходов, не находясь при этом под боем.
+// Ввод.В первой строке находятся числа M и N.В следующих N строках по M символов задано расположение фигур.
+// Имеются следующие обозначения:
+// «.» – пустая клетка;
+// «*» – белый король;
+// «K» – черный конь;
+// «B» – черный слон;
+// «R» – черная ладья.
+// Белый король в начальной позиции не атакован.Общее число черных фигур не более 14.
+// Вывод.В единственной строке выводится минимальное число ходов, необходимое для взятия черных фигур.
+// Вывести 0, если черных фигур нет, и - 1, если взять все черные фигуры невозможно.
+// Ограничения.На одном тесте время счета не должно превышать 4 сек.
+
 const std::string inputFileName = "input.txt";
 const std::string outputFileName = "output.txt";
 
@@ -46,6 +63,7 @@ struct WaveBoard
 public:
     std::vector<std::vector<char>> board;
     Position kingPos;
+    int width, height;
     WaveBoard()
     {
         kingPos = Position(0, 0);
@@ -54,7 +72,6 @@ public:
 
 std::istream& operator >> (std::istream& is, FieldState& fieldState)
 {
-    short in = 1;
     char ch;
     is >> ch;
     switch (ch)
@@ -283,6 +300,8 @@ bool IsUnsolvable(const Board& board)
 WaveBoard InitWaveBoard(const Board& board)
 {
     WaveBoard newBoard;
+    newBoard.width = BoardWidth(board);
+    newBoard.height = BoardHeight(board);
     newBoard.board.resize(BoardHeight(board));
     for (int i = 0; i < BoardHeight(board); i++)
     {
@@ -332,16 +351,148 @@ Board GetUpdatedBoard(const Board& board, Position oldKingPos, Position newKingP
     return newBoard;
 }
 
-std::pair<std::vector<Position>, int> GetClosestFiguresPositionsList(WaveBoard& waveBoard)
+int GetMaxWaveRadius(const WaveBoard& waveBoard)
 {
-    std::vector<Position> closestFigures, wave;
+    return std::max(
+        std::min(waveBoard.kingPos.x, std::abs(waveBoard.kingPos.x - waveBoard.width) - 1),
+        std::min(waveBoard.kingPos.y, std::abs(waveBoard.kingPos.y - waveBoard.height) - 1)
+    );
+}
+
+void RemoveUnoptimalFields(WaveBoard& waveBoard, const Position& figureSource, int deltaX, int deltaY)
+{
+    if (deltaX == 0)
+    {
+        if (deltaY > 0) // bottom center
+        {
+            for (int j = figureSource.y; j < waveBoard.height; j++)
+            {
+                for (int i = figureSource.x - (j - figureSource.y); i < figureSource.x + (j - figureSource.y) + 1; i++)
+                {
+                    if (IsPositionInsideBoard(waveBoard, Position(i, j)))
+                    {
+                        waveBoard.board[j][i] = -1;
+                    }
+                }
+            }
+        }
+        else // top center
+        {
+            for (int j = figureSource.y; j >= 0; j--)
+            {
+                for (int i = figureSource.x - (figureSource.y - j); i < figureSource.x + (figureSource.y - j) + 1; i++)
+                {
+                    if (IsPositionInsideBoard(waveBoard, Position(i, j)))
+                    {
+                        waveBoard.board[j][i] = -1;
+                    }
+                }
+            }
+        }
+    }
+    if (deltaY == 0)
+    {
+        if (deltaX > 0) // right center
+        {
+            for (int i = figureSource.x; i < waveBoard.width; i++)
+            {
+                for (int j = figureSource.y - (i - figureSource.x); j < figureSource.y + (i - figureSource.x) + 1; j++)
+                {
+                    if (IsPositionInsideBoard(waveBoard, Position(i, j)))
+                    {
+                        waveBoard.board[j][i] = -1;
+                    }
+                }
+            }
+        }
+        else // left center
+        {
+            for (int i = figureSource.x; i >= 0; i--)
+            {
+                for (int j = figureSource.y - (figureSource.x - i); j < figureSource.y + (figureSource.x - i) + 1; j++)
+                {
+                    if (IsPositionInsideBoard(waveBoard, Position(i, j)))
+                    {
+                        waveBoard.board[j][i] = -1;
+                    }
+                }
+            }
+        }
+    }
+    if (deltaX > 0)
+    {
+        if (deltaY > 0) // bottom right
+        {
+            for (int j = figureSource.y; j < waveBoard.height; j++)
+            {
+                for (int i = figureSource.x; i < waveBoard.width; i++)
+                {
+                    if (IsPositionInsideBoard(waveBoard, Position(i, j)))
+                    {
+                        waveBoard.board[j][i] = -1;
+                    }
+                }
+            }
+        }
+        else // top right
+        {
+            for (int j = figureSource.y; j >= 0; j--)
+            {
+                for (int i = figureSource.x; i < waveBoard.width; i++)
+                {
+                    if (IsPositionInsideBoard(waveBoard, Position(i, j)))
+                    {
+                        waveBoard.board[j][i] = -1;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        if (deltaY > 0) // bottom left
+        {
+            for (int j = figureSource.y; j < waveBoard.height; j++)
+            {
+                for (int i = figureSource.x; i >= 0; i--)
+                {
+                    if (IsPositionInsideBoard(waveBoard, Position(i, j)))
+                    {
+                        waveBoard.board[j][i] = -1;
+                    }
+                }
+            }
+        }
+        else // top left
+        {
+            for (int j = figureSource.y; j >= 0; j--)
+            {
+                for (int i = figureSource.x; i >= 0; i--)
+                {
+                    if (IsPositionInsideBoard(waveBoard, Position(i, j)))
+                    {
+                        waveBoard.board[j][i] = -1;
+                    }
+                }
+            }
+        }
+    }
+}
+
+std::vector<std::pair<Position, int>> GetFiguresPositionsList(WaveBoard& waveBoard)
+{
+    std::vector<std::pair<Position, int>> closestFigures;
+    std::vector<Position> wave;
+    int maxWaveRadius = GetMaxWaveRadius(waveBoard);
     int stepsCount = 0;
     wave.push_back(waveBoard.kingPos);
+    waveBoard.board[waveBoard.kingPos.y][waveBoard.kingPos.x] = -1;
     std::unordered_set<char> figures = { Knight, Rook, Bishop };
-    while (closestFigures.size() == 0)
+    while (wave.size() > 0)
     {
+        stepsCount++;
         std::vector<Position> newWave;
-        for (Position waveElem : wave)
+        for (auto waveElem : wave)
         {
             for (Position newWaveElem : std::vector<Position>{
                 {waveElem.x + 1, waveElem.y},
@@ -360,28 +511,17 @@ std::pair<std::vector<Position>, int> GetClosestFiguresPositionsList(WaveBoard& 
                         newWave.push_back(newWaveElem);
                         if (figures.contains(waveBoard.board[newWaveElem.y][newWaveElem.x]))
                         {
-                            closestFigures.push_back(newWaveElem);
+                            closestFigures.push_back({ newWaveElem, stepsCount });
+                            RemoveUnoptimalFields(waveBoard, newWaveElem, newWaveElem.x - waveElem.x, newWaveElem.y - waveElem.y);
                         }
                         waveBoard.board[newWaveElem.y][newWaveElem.x] = -1;
                     }
                 }
             }
         }
-        if (newWave.size() > 0)
-        {
-            wave = newWave;
-            stepsCount++;
-        }
-        else
-        {
-            break;
-        }
+        wave = newWave;
     }
-    if (closestFigures.size() == 0)
-    {
-        return { {}, 0 };
-    }
-    return { closestFigures, stepsCount };
+    return closestFigures;
 }
 
 std::vector<Position> GetUpdatedPassedFields(const std::vector<Position>& passedFields, const std::vector<Position>& newFields)
@@ -405,40 +545,82 @@ std::vector<Position> GetClearedFields(const std::vector<Position>& passedFields
         if (std::find(passedFields.cbegin(), passedFields.cend(), pos) == passedFields.cend())
         {
             newPositions.push_back(pos);
-        }
+        } 
     }
     return newPositions;
 }
 
-int FindShortestWayStepsCount(const Board& initialBoard, const std::vector<Position>& pastContextPassedFields)
+int GetFiguresCount(const Board& board)
 {
-    WaveBoard waveBoard = GetWaveBoardWithBlockedFields(initialBoard);
-    std::pair<std::vector<Position>, int> positionsAndStepsCount = GetClosestFiguresPositionsList(waveBoard);
-    std::vector<Position> closestFiguresPoses = GetClearedFields(pastContextPassedFields, positionsAndStepsCount.first);
-    int shortestWayStepsCount = positionsAndStepsCount.second;
-    std::vector<Position> currentContextPassedFields = pastContextPassedFields;
-    int childStepsCount = INT_MAX;
-    if (closestFiguresPoses.size() == 0)
+    int count = 0;
+    for (int i = 0; i < BoardHeight(board); i++)
+    {
+        for (int j = 0; j < BoardWidth(board); j++)
+        {
+            if (board[i][j] == Rook || board[i][j] == Bishop || board[i][j] == Knight)
+            {
+                count++;
+            }
+        }
+    }
+    return count;
+}
+
+int FindShortestWayStepsCount(const Board& initialBoard, int figuresLeft, int& minPathStepsCount, int currentPathStepsCount)
+{
+    if (currentPathStepsCount >= minPathStepsCount)
     {
         return 0;
     }
-    for (Position source : closestFiguresPoses)
+    WaveBoard waveBoard = GetWaveBoardWithBlockedFields(initialBoard);
+    std::vector<std::pair<Position, int>> figuresPoses = GetFiguresPositionsList(waveBoard);
+    int childStepsCount = INT_MAX,
+        shortestWayFigureStepsCount = INT_MAX,
+        stepsSum = 0;
+    if (figuresPoses.size() == 0 && figuresLeft == 0)
     {
-        Board newBoard = GetUpdatedBoard(initialBoard, waveBoard.kingPos, source);
-        int newValue = FindShortestWayStepsCount(newBoard, GetUpdatedPassedFields(currentContextPassedFields, {source}));
+        minPathStepsCount = std::min(minPathStepsCount, currentPathStepsCount);
+        return 0;
+    }
+    for (std::pair<Position, int> source : figuresPoses)
+    {
+        int newValue = FindShortestWayStepsCount(
+            GetUpdatedBoard(initialBoard, waveBoard.kingPos, source.first), 
+            figuresLeft - 1, 
+            minPathStepsCount,
+            currentPathStepsCount + source.second);
         if (newValue == 0)
         {
             childStepsCount = 0;
+            shortestWayFigureStepsCount = source.second;
             break;
         }
-        childStepsCount = std::min(newValue, childStepsCount);
+        if (childStepsCount == INT_MAX || (childStepsCount - newValue) + (shortestWayFigureStepsCount - source.second) > 0)
+        {
+            childStepsCount = newValue;
+            shortestWayFigureStepsCount = source.second;
+        }
         //std::cout << source.x << "-" << source.y << ":" << childStepsCount << " ";
     }
     if (childStepsCount == INT_MAX)
     {
+        if (figuresLeft > 0)
+        {
+            return -1;
+        }
         childStepsCount = 0;
     }
-    return shortestWayStepsCount + childStepsCount;
+    else
+    {
+        if (childStepsCount == -1)
+        {
+            if (figuresLeft > 0)
+            {
+                return -1;
+            }
+        }
+    }
+    return childStepsCount + shortestWayFigureStepsCount;
 }
 
 int main(int argc, char* argv[])
@@ -462,7 +644,8 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
         std::vector<Position> fields;
-        output << FindShortestWayStepsCount(board, fields) << std::endl;
+        int pathStepsCount = INT_MAX;
+        output << FindShortestWayStepsCount(board, GetFiguresCount(board), pathStepsCount, 0) << std::endl;
     }
     catch (std::exception e)
     {
