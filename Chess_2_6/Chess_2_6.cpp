@@ -571,62 +571,46 @@ int GetFiguresCount(const WaveBoard& waveBoard)
     return count;
 }
 
-int FindShortestWayStepsCount(const Board& initialBoard, int figuresLeft, int& minPathStepsCount, int currentPathStepsCount)
+void FindShortestWayStepsCount(const Board& initialBoard, int figuresLeft, int& minPathStepsCount, int currentPathStepsCount)
 {
-    if (currentPathStepsCount + figuresLeft >= minPathStepsCount)
+    std::stack<std::tuple<Board, int, int>> states;
+    states.push({ initialBoard, figuresLeft, currentPathStepsCount });
+    while (states.size() > 0)
     {
-        return 0;
-    }
-    WaveBoard waveBoard = GetWaveBoardWithBlockedFields(initialBoard);
-    std::vector<std::pair<Position, int>> figuresPoses = GetFiguresPositionsList(waveBoard);
-    int childStepsCount = INT_MAX,
-        shortestWayFigureStepsCount = INT_MAX,
-        stepsSum = 0;
-    if (figuresPoses.size() == 0 && figuresLeft == 0)
-    {
-        if (minPathStepsCount > currentPathStepsCount)
+        auto state = states.top();
+        states.pop();
+        int left = std::get<1>(state);
+        int currentPath = std::get<2>(state);
+
+        if (currentPath + left >= minPathStepsCount)
         {
-            minPathStepsCount = currentPathStepsCount;
+            continue;
         }
 
-        return 0;
-    }
-    for (std::pair<Position, int> source : figuresPoses)
-    {
-        int newValue = FindShortestWayStepsCount(
-            GetUpdatedBoard(initialBoard, waveBoard.kingPos, source.first), 
-            figuresLeft - 1, 
-            minPathStepsCount,
-            currentPathStepsCount + source.second);
-        if (newValue == 0)
+        Board currentBoard = std::get<0>(state);
+        
+        WaveBoard waveBoard = GetWaveBoardWithBlockedFields(currentBoard);
+        std::vector<std::pair<Position, int>> figuresPoses = GetFiguresPositionsList(waveBoard);
+        int childStepsCount = INT_MAX,
+            shortestWayFigureStepsCount = INT_MAX,
+            stepsSum = 0;
+        if (left == 0)
         {
-            childStepsCount = 0;
-            shortestWayFigureStepsCount = source.second;
-            break;
+            if (minPathStepsCount > currentPath)
+            {
+                minPathStepsCount = currentPath;
+            }
+            continue;
         }
-        if (childStepsCount == INT_MAX || (childStepsCount - newValue) + (shortestWayFigureStepsCount - source.second) > 0)
+        for (std::pair<Position, int> source : figuresPoses)
         {
-            childStepsCount = newValue;
-            shortestWayFigureStepsCount = source.second;
-        }
-        //std::cout << source.x << "-" << source.y << ":" << childStepsCount << " ";
-    }
-    if (childStepsCount == INT_MAX)
-    {
-        if (figuresLeft > 0)
-        {
-            return -1;
-        }
-        childStepsCount = 0;
-    }
-    else
-    {
-        if (childStepsCount == -1 && figuresLeft > 0)
-        {
-            return -1;
+            if (currentPath + source.second < minPathStepsCount)
+            {
+                states.push({ GetUpdatedBoard(currentBoard, waveBoard.kingPos, source.first), left - 1, currentPath + source.second });
+            }
+            //std::cout << source.x << "-" << source.y << ":" << childStepsCount << " ";
         }
     }
-    return childStepsCount + shortestWayFigureStepsCount;
 }
 
 int main(int argc, char* argv[])
@@ -651,7 +635,9 @@ int main(int argc, char* argv[])
         }
         std::vector<Position> fields;
         int pathStepsCount = INT_MAX;
+        int start = clock();
         FindShortestWayStepsCount(board, GetFiguresCount(board), pathStepsCount, 0);
+        std::cout << clock() - start << std::endl;
         output << (pathStepsCount == INT_MAX ? -1 : pathStepsCount) << std::endl;
     }
     catch (std::exception e)
