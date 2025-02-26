@@ -490,9 +490,8 @@ std::vector<std::pair<Position, int>> GetFiguresPositionsList(WaveBoard& waveBoa
     {
         stepsCount++;
         std::vector<Position> newWave;
-        for (auto waveElem : wave)
+        for (const auto& waveElem : wave)
         {
-            std::vector<Position> figuresToEat;
             for (const Position& newWaveElem : std::vector<Position>{
                 {waveElem.x + 1, waveElem.y},
                 {waveElem.x - 1, waveElem.y},
@@ -512,18 +511,10 @@ std::vector<std::pair<Position, int>> GetFiguresPositionsList(WaveBoard& waveBoa
                         {
                             closestFigures.push_back({ newWaveElem, stepsCount });
                             RemoveUnoptimalFields(waveBoard, newWaveElem, newWaveElem.x - waveElem.x, newWaveElem.y - waveElem.y);
-                            figuresToEat.push_back({ newWaveElem.x, newWaveElem.y });
                         }
-                        else
-                        {
-                            waveBoard.board[newWaveElem.y][newWaveElem.x] = -1;
-                        }
+                        waveBoard.board[newWaveElem.y][newWaveElem.x] = -1;
                     }
                 }
-            }
-            for (const Position& figure : figuresToEat)
-            {
-                waveBoard.board[figure.y][figure.x] = -1;
             }
         }
         wave = newWave;
@@ -591,7 +582,7 @@ int FindShortestWayStepsCount(const Board& initialBoard, int figuresLeft, int& m
         minPathStepsCount = std::min(minPathStepsCount, currentPathStepsCount);
         return 0;
     }
-    for (std::pair<Position, int> source : figuresPoses)
+    for (const std::pair<Position, int>& source : figuresPoses)
     {
         if (currentPathStepsCount + source.second + figuresLeft - 1 >= minPathStepsCount)
         {
