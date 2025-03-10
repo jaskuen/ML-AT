@@ -13,31 +13,31 @@ const int MAX_SUM = 9 * MAX_N + 1;
 long long dp[MAX_N * 2 + 1][MAX_SUM][MAX_SUM][10][2]; // [pos][sum1][sum2][prev_digit][is_start]
 // long long - 64 бита на число
 
-long long solve(int pos, int sum1, int sum2, int prev, int is_start, int n) 
+long long solve(int pos, int sum1, int sum2, int prev, int isFirstDigit, int n) 
 {
     if (pos == 2 * n) 
     {
         return (sum1 == sum2) ? 1 : 0; 
     }
 
-    long long& res = dp[pos][sum1][sum2][prev][is_start];
+    long long& res = dp[pos][sum1][sum2][prev][isFirstDigit];
     if (res != -1) return res;
 
     res = 0;
     int limit = 9;
     for (int digit = 0; digit <= limit; digit++) 
     {
-        if (!is_start || abs(digit - prev) <= 1)
+        if (isFirstDigit || abs(digit - prev) <= 1)
         {
             if (pos < n) 
             {
-                res += solve(pos + 1, sum1 + digit, sum2, digit, 1, n);
+                res += solve(pos + 1, sum1 + digit, sum2, digit, 0, n);
             }
             else 
             {
                 if (sum1 >= sum2 + digit) 
                 {
-                    res += solve(pos + 1, sum1, sum2 + digit, digit, 1, n);   
+                    res += solve(pos + 1, sum1, sum2 + digit, digit, 0, n);   
                 }
             }
         }
@@ -52,7 +52,7 @@ int main()
 
     memset(dp, -1, sizeof(dp));
 
-    long long answer = solve(0, 0, 0, 0, 0, n);
+    long long answer = solve(0, 0, 0, 0, 1, n);
     std::cout << answer << std::endl;
 
     return 0;
