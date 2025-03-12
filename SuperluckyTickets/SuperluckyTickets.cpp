@@ -8,9 +8,10 @@
 // соседней   не   более   чем   на   1   (например, 323233).  Номер  может начинаться с 0. 
 // Найти количество «суперсчастливых» номеров среди всех 2N - значных  билетов(1 ≤ N ≤ 20).
 
+const int MAX_DIGIT = 9;
 const int MAX_N = 20;
 const int MAX_SUM = 9 * MAX_N + 1;
-long long dp[MAX_N * 2 + 1][MAX_SUM][MAX_SUM][10][2]; // [pos][sum1][sum2][prev_digit][is_start]
+long long dp[MAX_N * 2 + 1][MAX_SUM][MAX_SUM][MAX_DIGIT + 1][2]; // [pos][sum1][sum2][prevDigit][isFirstDigit]
 // long long - 64 бита на число
 
 long long solve(int pos, int sum1, int sum2, int prev, int isFirstDigit, int n) 
@@ -21,11 +22,12 @@ long long solve(int pos, int sum1, int sum2, int prev, int isFirstDigit, int n)
     }
 
     long long& res = dp[pos][sum1][sum2][prev][isFirstDigit];
-    if (res != -1) return res;
-
+    if (res != -1)
+    {
+        return res;
+    }
     res = 0;
-    int limit = 9;
-    for (int digit = 0; digit <= limit; digit++) 
+    for (int digit = 0; digit <= MAX_DIGIT; digit++)
     {
         if (isFirstDigit || abs(digit - prev) <= 1)
         {
@@ -55,5 +57,5 @@ int main()
     long long answer = solve(0, 0, 0, 0, 1, n);
     std::cout << answer << std::endl;
 
-    return 0;
+    return EXIT_SUCCESS;
 }
