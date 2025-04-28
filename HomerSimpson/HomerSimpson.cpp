@@ -39,7 +39,9 @@ Result GetResult(llong money, std::vector<llong>& prices)
     std::sort(indices.begin(), indices.end(), [&sortedPrices](int a, int b) {
             return sortedPrices[a] < sortedPrices[b];
         });
-    llong C1 = sortedPrices[indices[0]], C2 = sortedPrices[indices[1]], C3 = sortedPrices[indices[2]];
+    llong C1 = sortedPrices[indices[0]];
+    llong C2 = sortedPrices[indices[1]]; 
+    llong C3 = sortedPrices[indices[2]];
 
     llong maxCount = money / C1;
     llong minLeft = money - maxCount * C1;
